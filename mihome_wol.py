@@ -34,7 +34,7 @@ def mqtt_handle(data):
 def connect_bemfa() -> mqtt_client:
     def on_message_bemfa(client, userdata, msg):
         message = msg.payload.decode()
-        log_message(f"Received `{message}` from `{msg.topic}` topic")
+        log_message(f'Received message "{message}" from topic "{msg.topic}"')
         mqtt_handle(message)
 
     def on_connect_bemfa(client, userdata, flags, rc):
@@ -52,7 +52,7 @@ def connect_bemfa() -> mqtt_client:
 
 # 使用 OpenWRT 的 logger 记录日志
 def log_message(message):
-    os.system(f'logger -p info -t mihome_wol -s "{message}"')
+    os.system(f"logger -p info -t mihome_wol -s '{message}'")
 
 # MQTT 任务
 def task_bemfa_wol():
