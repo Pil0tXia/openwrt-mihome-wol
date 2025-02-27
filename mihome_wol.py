@@ -25,10 +25,9 @@ def mqtt_handle(data):
         result = os.system(f'sshpass -p {wol_password} ssh {wol_user}@{wol_ip} "psshutdown64.exe -d -t 0 -accepteula" > /dev/null 2>&1 &')
         # 休眠
         # result = os.system(f'sshpass -p {wol_password} ssh -n {wol_user}@{wol_ip} "shutdown -h" > /dev/null 2>&1 &')
-		# 关机
+        # 关机
         # result = os.system(f'sshpass -p {wol_password} ssh -n {wol_user}@{wol_ip} "shutdown -s -t 0" > /dev/null 2>&1 &')
         log_message(f"Power Off command sent, result: {result}")
-
 
 # 连接巴法 MQTT 服务器并订阅主题
 def connect_bemfa() -> mqtt_client:
