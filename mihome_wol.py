@@ -20,24 +20,36 @@ wol_password = ''
 def mqtt_handle(data):
     try:
         if "on" in data:
-            result = subprocess.run(
+            process = subprocess.Popen(
                 ['etherwake', '-i', 'br-lan', wol_mac],
-                timeout=3,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                text=True
             )
-            log_message(f"Power On command sent, return code: {result.returncode}, output: {result.stdout.decode().strip()}")
         elif "off" in data:
-            # 睡眠
-            result = subprocess.run(
+            process = subprocess.Popen(
                 ['sshpass', '-p', wol_password, 'ssh', f'{wol_user}@{wol_ip}', 'psshutdown64.exe -d -t 0 -accepteula'],
-                timeout=5,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                text=True
             )
-            log_message(f"Power Off command sent, return code: {result.returncode}, output: {result.stdout.decode().strip()}")
-    except subprocess.TimeoutExpired as e:
-        log_message(f'Subprocess command "{data}" timed out, killing...')
+        else:
+            log_message(f"Unknown command: {data}")
+            return
+
+        # 实时读取输出
+        for line in process.stdout:
+            log_message(f"STDOUT: {line.strip()}")
+        for line in process.stderr:
+            log_message(f"STDERR: {line.strip()}")
+
+        # 等待进程结束并获取返回码
+        process.wait(timeout=5)
+        log_message(f"Command finished with return code: {process.returncode}")
+
+    except subprocess.TimeoutExpired:
+        process.kill()
+        log_message(f"Command '{data}' timed out and was terminated.")
     except Exception as e:
         log_message(f"Error executing command: {e}")
 
