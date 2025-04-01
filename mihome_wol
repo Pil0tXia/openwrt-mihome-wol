@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# OpenWRT Init Script for MiHome Wake on Lan
+
+START=99
+
+start() {
+        echo "Starting mihome_wol..."
+        cd /root/tools/openwrt-mihome-wol && python3 mihome_wol.py &
+}
+
+stop() {
+        echo "Stopping mihome_wol..."
+        pkill -f "python3 mihome_wol.py"
+}
