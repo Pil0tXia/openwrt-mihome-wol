@@ -1,5 +1,6 @@
 import os
 import threading
+import subprocess
 import configparser
 from paho.mqtt import client as mqtt_client
 
@@ -17,18 +18,28 @@ wol_password = ''
 
 # 收到订阅的主题消息后，进行处理：开机/关机
 def mqtt_handle(data):
-    if "on" in data:
-        result = os.system(f'etherwake -i "br-lan" "{wol_mac}"')
-        log_message(f"Power On command sent, result: {result}")
-    elif "off" in data:
-        # 睡眠
-        result = os.system(f'sshpass -p {wol_password} ssh {wol_user}@{wol_ip} "psshutdown64.exe -d -t 0 -accepteula" > /dev/null 2>&1 &')
-        # 休眠
-        # result = os.system(f'sshpass -p {wol_password} ssh -n {wol_user}@{wol_ip} "shutdown -h" > /dev/null 2>&1 &')
-		# 关机
-        # result = os.system(f'sshpass -p {wol_password} ssh -n {wol_user}@{wol_ip} "shutdown -s -t 0" > /dev/null 2>&1 &')
-        log_message(f"Power Off command sent, result: {result}")
-
+    try:
+        if "on" in data:
+            result = subprocess.run(
+                ['etherwake', '-i', 'br-lan', wol_mac],
+                timeout=3,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            log_message(f"Power On command sent, return code: {result.returncode}, output: {result.stdout.decode().strip()}")
+        elif "off" in data:
+            # 睡眠
+            result = subprocess.run(
+                ['sshpass', '-p', wol_password, 'ssh', f'{wol_user}@{wol_ip}', 'psshutdown64.exe -d -t 0 -accepteula'],
+                timeout=5,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            log_message(f"Power Off command sent, return code: {result.returncode}, output: {result.stdout.decode().strip()}")
+    except subprocess.TimeoutExpired as e:
+        log_message(f'Subprocess command "{data}" timed out, killing...')
+    except Exception as e:
+        log_message(f"Error executing command: {e}")
 
 # 连接巴法 MQTT 服务器并订阅主题
 def connect_bemfa() -> mqtt_client:
